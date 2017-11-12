@@ -30,7 +30,6 @@ $('#picker').mousemove(function(e) { // mouse move handler
 
     // get current pixel
     var imageData = context.getImageData(canvasX, canvasY, 1, 1);
-    $("span").text(canvasX + ", " + canvasY);
     var pixel = imageData.data;
 
     // update preview color
@@ -46,3 +45,16 @@ $('#picker').mousemove(function(e) { // mouse move handler
     var dColor = pixel[2] + 256 * pixel[1] + 65536 * pixel[0];
     $('#hexVal').val('#' + ('0000' + dColor.toString(16)).substr(-6));
 });
+
+$('#picker').click(function(e){
+    $.ajax({
+        type: 'GET',
+        url: 'api/changecolor',
+        data: {
+            color: "#f78f1e"
+        },
+        success: function(result){
+            alert("Okay");
+        }
+    });
+})
