@@ -51,7 +51,7 @@ $('#picker').click(function(e){
         type: 'GET',
         url: 'api/changecolor',
         data: {
-            red: $('#hexVal').val()
+            color: $('#hexVal').val()
         }
     });
 })
