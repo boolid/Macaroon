@@ -43,7 +43,7 @@ $('#picker').mousemove(function(e) { // mouse move handler
     $('#rgbVal').val(pixel[0]+','+pixel[1]+','+pixel[2]);
 
     var dColor = pixel[2] + 256 * pixel[1] + 65536 * pixel[0];
-    $('#hexVal').val('#' + ('0000' + dColor.toString(16)).substr(-6));
+    $('#hexVal').val(('0000' + dColor.toString(16)).substr(-6));
 });
 
 $('#picker').click(function(e){
@@ -51,10 +51,7 @@ $('#picker').click(function(e){
         type: 'GET',
         url: 'api/changecolor',
         data: {
-            color: "#f78f1e"
-        },
-        success: function(result){
-            alert("Okay");
+            red: $('#hexVal').val()
         }
     });
 })
