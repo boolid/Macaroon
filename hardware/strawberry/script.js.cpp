@@ -1,3 +1,5 @@
+#include <pgmspace.h>
+char main_js[] PROGMEM = R"=====(
 var colorPicker = null;
 var sendData = false;
 setInterval(sendDataCheck, 200);
@@ -7,9 +9,6 @@ function sendDataCheck() {
         sendData = false;
     }
 }
-
-var brightness = new Slider('#brightness-slider');
-var speed = new Slider('#speed-slider');
 
 $(window).on('load', function() {
     if ($(".dropdown-menu").length > 0) {
@@ -38,10 +37,12 @@ $(window).on('load', function() {
         success: function(response) {
             if($("#brightness-value").length > 0) {
                 $("#brightness-value").text(response['brightness'])
+                var brightness = new Slider('#brightness-slider');
                 brightness.setValue(response['brightness'])
             }
             if($("#speed-value").length > 0) {
                 $("#speed-value").text(response['speed'])
+                var speed = new Slider('#speed-slider');
                 speed.setValue(response['speed'])
             }
             if($("#led-count").length > 0) {
@@ -182,3 +183,5 @@ String.prototype.format = function() {
   }
   return a
 }
+)=====";
+
