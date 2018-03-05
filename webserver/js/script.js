@@ -1,101 +1,184 @@
-var colorPicker = null;
-var sendData = false;
-setInterval(sendDataCheck, 200);
-
-function sendDataCheck() {
-    if (sendData === true) {
-        sendData = false;
-    }
+// 
+var mode = {
+    0: {"Name": "Static"},
+    1: {"Name": "Blink"},
+    2: {"Name": "Breath"},
+    3: {"Name": "Color Wipe"},
+    4: {"Name": "Color Wipe Inverse"}, 
+    5: {"Name": "Color Wipe Reverse"},
+    6: {"Name": "Color Wipe Reverse Inverse"},
+    7: {"Name": "Color Wipe Random"},
+    8: {"Name": "Random Color"},
+    9: {"Name": "Single Dynamic"},
+    10: {"Name": "Multi Dynamic"},
+    11: {"Name": "Rainbow"},
+    12: {"Name": "Rainbow Cycle"},
+    13: {"Name": "Scan"},
+    14: {"Name": "Dual Scan"},
+    15: {"Name": "Fade"},
+    16: {"Name": "Theater Chase"},
+    17: {"Name": "Theater Chase Rainbow"},
+    18: {"Name": "Running Lights"},
+    19: {"Name": "Twinkle"},
+    20: {"Name": "Twinkle Random"},
+    21: {"Name": "Twinkle Fade"},
+    22: {"Name": "Twinkle Fade Random"},
+    23: {"Name": "Sparkle"},
+    24: {"Name": "Flash Sparkle"},
+    25: {"Name": "Hyper Sparkle"},
+    26: {"Name": "Strobe"},
+    27: {"Name": "Strobe Rainbow"},
+    28: {"Name": "Multi Strobe"},
+    29: {"Name": "Blink Rainbow"},
+    30: {"Name": "Chase White"},
+    31: {"Name": "Chase Color"},
+    32: {"Name": "Chase Random"},
+    33: {"Name": "Chase Rainbow"},
+    34: {"Name": "Chase Flash"},
+    35: {"Name": "Chase Flash Random"},
+    36: {"Name": "Chase Rainbow White"},
+    37: {"Name": "Chase Blackout"},
+    38: {"Name": "Chase Blackout Rainbow"},
+    39: {"Name": "Color Sweep Random"},
+    40: {"Name": "Running Color"},
+    41: {"Name": "Running Red Blue"},
+    42: {"Name": "Running Random"},
+    43: {"Name": "Larson Scanner"},
+    44: {"Name": "Comet"},
+    45: {"Name": "Fireworks"},
+    46: {"Name": "Fireworks Random"},
+    47: {"Name": "Merry Christmas"},
+    48: {"Name": "Fire Flicker"},
+    49: {"Name": "Fire Flicker (soft)"},
+    50: {"Name": "Fire Flicker (intense)"},
+    51: {"Name": "Circus Combustus"},
+    52: {"Name": "Halloween"},
+    53: {"Name": "Bicolor Chase"},
+    54: {"Name": "Tricolor Chase"},
+    55: {"Name": "ICU"}
 }
 
-var brightness = new Slider('#brightness-slider');
-var speed = new Slider('#speed-slider');
+var state = {
+    'segments': [
+        {
+            'segmentStart': 0,
+            'segmentEnd': 20,
+            'mode': 0,
+            'brightness': 122,
+            'speed': 122,
+            'color': 'FF0000',
+        },
+    ],
+    'countLED': 20,
+};
 
-$(window).on('load', function() {
-    if ($(".dropdown-menu").length > 0) {
-        $.ajax({
-            type: 'GET',
-            url: 'modes',
-            success: function(response) {
-                $(".dropdown-menu").append( response );
-                $(".dropdown-item").click(function(){
-                    $(".btn:first-child").text($(this).text());
-                    $(".btn:first-child").val($(this).text());
-                    $.ajax({
-                        type: 'GET',
-                        url: 'set',
-                        data: {
-                            m: this.value
-                        }
-                    });
-                });
-            }
-        });
-    }
-    $.ajax({
-        type: 'GET',
-        url: 'setup',
-        success: function(response) {
-            if($("#brightness-value").length > 0) {
-                $("#brightness-value").text(response['brightness'])
-                brightness.setValue(response['brightness'])
-            }
-            if($("#speed-value").length > 0) {
-                $("#speed-value").text(response['speed'])
-                speed.setValue(response['speed'])
-            }
-            if($("#led-count").length > 0) {
-                $("#led-count").val(response['ledlength'])
-            }
-        }
-    });
+var selectSegment = 0;
 
-});
-
-$("#brightness-slider").on("change", function(slideEvt) {
-    if (sendData === false){
-        $.ajax({
-            type: 'GET',
-            url: 'set',
-            data: {
-                b: slideEvt.value.newValue
-            }
-        });
-        sendData = true;
-    }
-    $("#brightness-value").text(slideEvt.value.newValue);
-});
-
-$("#speed-slider").on("change", function(slideEvt) {
-    if (sendData === false){
-        $.ajax({
-            type: 'GET',
-            url: 'set',
-            data: {
-                s: slideEvt.value.newValue
-            }
-        });
-        sendData = true;
-    }
-    $("#speed-value").text(slideEvt.value.newValue);
-});
-
-
+// Start Color Picker
+var colorPicker = null;
 createColorPicker();
 
-$("#led-button").on("click", function(){
-    if (sendData === false){
-        $.ajax({
-            type: 'GET',
-            url: 'set',
-            data: {
-                l: $("#led-count").val()
-            }
-        });
-        sendData = true;
-    }
+// Setup for the Slider 
+var sliderLEDCount = document.getElementById('slider-LEDcount');
+var sliderRange = document.getElementById('slider-range');
+var sliderBrightness = document.getElementById('slider-brightness');
+var sliderSpeed = document.getElementById('slider-speed');
+
+noUiSlider.create(sliderLEDCount, {
+    start: state['countLED'],
+    range: { min: 0, max: 1000 },
+    tooltips: [ wNumb({ decimals: 0 }) ],
+    connect: [true, false]
 });
 
+noUiSlider.create(sliderBrightness, {
+    start: state['segments'][selectSegment]['brightness'],
+    range: { min: 0, max: 255 },
+    tooltips: [ wNumb({ decimals: 0 }) ],
+    connect: [true, false]
+});
+
+noUiSlider.create(sliderSpeed, {
+    start: state['segments'][selectSegment]['speed'],
+    range: { min: 0, max: 255 },
+    tooltips: [ wNumb({ decimals: 0 }) ],
+    connect: [true, false]
+});
+
+noUiSlider.create(sliderRange, {
+    start: [ 
+        state['segments'][selectSegment]['segmentStart'], 
+        state['segments'][selectSegment]['segmentEnd'],
+    ],
+    range: { min: 0, max: state['countLED'] },
+    tooltips: [ wNumb({ decimals: 0 }), wNumb({ decimals: 0 }) ],
+    connect: true
+});
+
+init()
+
+sliderLEDCount.noUiSlider.on('update', function( values, handle ) {
+    state['countLED'] = Math.round(values[handle])
+});
+
+sliderBrightness.noUiSlider.on('update', function( values, handle ) {
+    state['segments'][selectSegment]['brightness'] = Math.round(values[handle]) 
+});
+
+sliderSpeed.noUiSlider.on('update', function( values, handle ) {
+    state['segments'][selectSegment]['speed'] = Math.round(values[handle]) 
+});
+
+sliderRange.noUiSlider.on('update', function( values, handle ) {
+    if (handle == 0){
+        state['segments'][selectSegment]['segmentStart'] = Math.round(values[handle])
+    } else {
+        state['segments'][selectSegment]['segmentEnd'] = Math.round(values[handle])
+    }
+    drawSegment()
+});
+
+
+$(".dropdown-item").click(function(){
+    $("#selector").text($(this).text());
+    $("#selector").val($(this).text());
+    state['segments'][selectSegment]['mode'] = Number($(this).attr('id'))
+
+    drawSegment()
+});
+
+
+function init() {
+
+    colorPicker.setColorByHex('#' + state['segments'][selectSegment]['color']);
+
+    sliderLEDCount.noUiSlider.updateOptions({
+        start: state['countLED'],
+    });
+
+    sliderBrightness.noUiSlider.updateOptions({
+        start: state['segments'][selectSegment]['brightness'],
+    });
+
+    sliderSpeed.noUiSlider.updateOptions({
+        start: state['segments'][selectSegment]['speed'],
+    });
+
+    sliderRange.noUiSlider.updateOptions({
+        start: [ 
+            state['segments'][selectSegment]['segmentStart'], 
+            state['segments'][selectSegment]['segmentEnd'],
+        ],
+        range: { min: 0, max: state['countLED'] },
+    });
+
+    $("#selector").text(mode[state['segments'][selectSegment]['mode']]['Name']);
+    $("#selector").val(mode[state['segments'][selectSegment]['mode']]['Name']);
+
+}
+
+
+// Viewport that changes the size of the color picker
 (function($, document, window, viewport){
 
     viewport.use('Foundation');
@@ -103,13 +186,9 @@ $("#led-button").on("click", function(){
         function checksize() {
             if( viewport.is('small') ) {
                 colorPicker.resize(300);
-            }
-
-            if( viewport.is('medium') ) {
+            } else if ( viewport.is('medium') ) {
                 colorPicker.resize(400);
-            }
-
-            if( viewport.is('>=large') ) {
+            } else if( viewport.is('>=large') ) {
                 colorPicker.resize(500);
             }
         }
@@ -135,6 +214,7 @@ function componentToHex(c) {
     return hex.length === 1 ? "0" + hex : hex;
 };
 
+// Color Picker Setup
 function createColorPicker() {
     // generate random size parametrs
     if (document.getElementById('test-pickers') !== null){
@@ -142,11 +222,12 @@ function createColorPicker() {
         var place = document.createElement('DIV');
         document.getElementById('test-pickers').appendChild(place);
         var r = rand(0, 255), g = rand(0, 255), b = rand(0, 255), a = 0.9;
-        var color = 'rgba(' + r + ',' + g +',' + b +','+ a +')';
+
+        var color = '#' + state['segments'][selectSegment]['color']
         var method = 'triangle';
         colorPicker = new KellyColorPicker({
             place : place,
-            size : 300,
+            size : 400,
             input : 'hexVal',
             method : 'triangle',
             color : color,
@@ -159,26 +240,124 @@ function createColorPicker() {
 
         var onchange = function(self) {
             var rgba = colorPicker.getCurColorRgba();
-            if (sendData === false){
-                $.ajax({
-                    type: 'GET',
-                    url: 'set',
-                    data: {
-                        c: this.componentToHex(rgba.r) + componentToHex(rgba.g) + componentToHex(rgba.b)
-                    }
-                });
-                sendData = true;
-            }
+            state['segments'][selectSegment]['color'] = this.componentToHex(rgba.r) + componentToHex(rgba.g) + componentToHex(rgba.b)
+            // if (sendData === false){
+            //     $.ajax({
+            //         type: 'GET',
+            //         url: 'set',
+            //         data: {
+            //             c: this.componentToHex(rgba.r) + componentToHex(rgba.g) + componentToHex(rgba.b)
+            //         }
+            //     });
+            //     sendData = true;
+            // }
         }
 
         colorPicker.addUserEvent("change", onchange);
     }
 };
 
-String.prototype.format = function() {
-  a = this;
-  for (k in arguments) {
-    a = a.replace("{" + k + "}", arguments[k])
-  }
-  return a
+function getEventTarget(e) {
+    e = e || window.event;
+    return e.target || e.srcElement; 
+}
+
+
+var ul = document.getElementById('LEDsegments');
+ul.onclick = function(event) {
+    var target = getEventTarget(event);
+    var index = Number(target.id)
+    if (target.className.indexOf('nav-link') !== -1) {
+        // Making Active Selection
+        selectSegment = index
+        init()
+        drawSegment()
+    } else {
+        // Remove Segment
+        if (state['segments'].length > 1){
+            if (index == 0) {
+                state['segments'][index + 1]['segmentStart'] = 0
+            } else if (index == state['segments'].length - 1) {
+                state['segments'][index - 1]['segmentEnd'] = state['segments'][index]['segmentEnd']
+            } else {
+                state['segments'][index + 1]['segmentStart'] = state['segments'][index]['segmentStart']
+                if (state['segments'][index]['segmentStart'] != state['segments'][index]['segmentEnd']) {
+                    state['segments'][index - 1]['segmentEnd'] = state['segments'][index]['segmentStart'] - 1
+                }        
+            }
+            state['segments'].splice(index, 1);
+            drawSegment()
+        }
+    }
+};
+
+drawSegment();
+
+function drawSegment() {
+    function _createSegment(string, index) {
+        var ul = document.getElementById("LEDsegments");
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        var button = document.createElement("button")
+        var i = document.createElement("i")
+
+        i.setAttribute("class", "fa fa-trash")
+        i.setAttribute("id", index)
+        button.setAttribute("class", "btn bg-warning btn-sm pull-right")
+        button.setAttribute("id", index)
+        button.setAttribute("type", "button")
+        button.appendChild(i)
+
+        a.setAttribute("class", "nav-link")
+        a.setAttribute("id", index)
+        a.appendChild(document.createTextNode(string))
+        a.appendChild(button)
+
+        var liClass = "nav-item"
+        if (index == selectSegment) {
+            liClass += " active"
+        }
+
+        li.setAttribute("class", liClass)
+        li.appendChild(a);
+        ul.appendChild(li);
+    }
+
+    $('#LEDsegments').empty();
+
+    state['segments'].forEach(function(segment, index){
+        var name = mode[segment['mode']]['Name'] + ': ' + segment['segmentStart'] + '-' + segment['segmentEnd']
+        _createSegment(name, index)
+    })
+}
+
+function addSegment() {
+    var lastSegment = state['countLED']
+
+    for (var i = state['segments'].length - 1; i >= 0; i--){
+        var start = state['segments'][i]['segmentStart']
+        var end = state['segments'][i]['segmentEnd']
+
+        if (end === 0) break;
+        if (end == lastSegment) {
+            lastSegment--
+            state['segments'][i]['segmentEnd'] = lastSegment
+            if (start === end) {
+                state['segments'][i]['segmentStart'] = lastSegment
+            } else {
+                break
+            }
+        } 
+    }
+
+    state['segments'].push({
+            'segmentStart': state['countLED'],
+            'segmentEnd': state['countLED'],
+            'mode': 0,
+            'brightness': 122,
+            'speed': 122,
+            'color': 'FF0000'
+    })
+
+    drawSegment()
 }
