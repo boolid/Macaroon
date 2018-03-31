@@ -1,3 +1,5 @@
+#include <pgmspace.h>
+char main_js[] PROGMEM = R"=====(
 // 
 var mode = {
     0: {"Name": "Static"},
@@ -471,3 +473,5 @@ setInterval(function()
         prevState = data
     }
 }, 1000);//time in milliseconds 
+)=====";
+
